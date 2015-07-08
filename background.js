@@ -364,3 +364,17 @@ chrome.notifications.onClicked.addListener(function (id) {
     chrome.windows.update(window.id, {focused: true});
   });
 });
+
+
+chrome.contextMenus.removeAll();
+chrome.contextMenus.create({
+    'title': "timer_end_notification_header",
+    'contexts': ['browser_action'],
+    'onclick': function() {
+        mainPomodoro.start()
+    }});
+
+ 
+
+//};
+
