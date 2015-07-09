@@ -15,7 +15,7 @@ loadRingIfNecessary();
 
 function defaultPrefs() {
   return {
-    siteList: [
+    siteBlacklist: [
       'facebook.com',
       'youtube.com',
       'twitter.com',
@@ -31,15 +31,16 @@ function defaultPrefs() {
       'addictinggames.com',
       'hulu.com'
     ],
+    siteWhitelist: [],
     durations: { // in seconds
       work: 25 * 60,
       break: 5 * 60
     },
     shouldRing: true,
     clickRestarts: false,
-    autostartWork: false,
-    autostartBreak: true,
-    whitelist: false
+	autostartWork: false,
+	autostartBreak: true,
+	whitelist: false
   }
 }
 
@@ -57,14 +58,20 @@ function updatePrefsFormat(prefs) {
   // compatibility issue. However, in more complicated situations, we need
   // to modify an old PREFS module's structure for compatibility.
   
-  if(prefs.hasOwnProperty('domainBlacklist')) {
-    // Upon adding the whitelist feature, the domainBlacklist property was
-    // renamed to siteList for clarity.
+  if(prefs.hasOwnProperty('siteList')) {
+    // Upon adding a separate blacklist and whitelist, the siteList property
+    // is renamed to either siteBlacklist or siteWhitelist.
     
-    prefs.siteList = prefs.domainBlacklist;
-    delete prefs.domainBlacklist;
+    if (prefs.whitelist) {
+      prefs.siteBlacklist = defaultPrefs().siteBlacklist;
+      prefs.siteWhitelist = prefs.siteList;
+    } else {
+      prefs.siteBlacklist = prefs.siteList;
+      prefs.siteWhitelist = defaultPrefs().siteWhitelist;
+    }
+    delete prefs.siteList;
     savePrefs(prefs);
-    console.log("Renamed PREFS.domainBlacklist to PREFS.siteList");
+    console.log("Renamed PREFS.siteList to PREFS.siteBlacklist/siteWhitelist");
   }
   
   if(!prefs.hasOwnProperty('showNotifications')) {
@@ -254,8 +261,9 @@ function domainsMatch(test, against) {
 }
 
 function isLocationBlocked(location) {
-  for(var k in PREFS.siteList) {
-    listedPattern = parseLocation(PREFS.siteList[k]);
+  var siteList = PREFS.whitelist ? PREFS.siteWhitelist : PREFS.siteBlacklist;
+  for(var k in siteList) {
+    listedPattern = parseLocation(siteList[k]);
     if(locationsMatch(location, listedPattern)) {
       // If we're in a whitelist, a matched location is not blocked => false
       // If we're in a blacklist, a matched location is blocked => true
@@ -301,19 +309,15 @@ var notification, mainPomodoro = new Pomodoro({
       
       var nextModeName = chrome.i18n.getMessage(timer.pomodoro.nextMode);
       if(PREFS.showNotifications) {
-        notification = webkitNotifications.createNotification(
-          ICONS.FULL[timer.type],
-          chrome.i18n.getMessage("timer_end_notification_header"),
-          chrome.i18n.getMessage("timer_end_notification_body", nextModeName)
-        );
-        notification.onclick = function () {
-          console.log("Will get last focused");
-          chrome.windows.getLastFocused(function (window) {
-            chrome.windows.update(window.id, {focused: true});
-          });
-          this.cancel();
-        };
-        notification.show();
+        var nextModeName = chrome.i18n.getMessage(timer.pomodoro.nextMode);
+        chrome.notifications.create("", {
+          type: "basic",
+          title: chrome.i18n.getMessage("timer_end_notification_header"),
+          message: chrome.i18n.getMessage("timer_end_notification_body",
+                                          nextModeName),
+          priority: 2,
+          iconUrl: ICONS.FULL[timer.type]
+        }, function() {});
       }
       
       if(PREFS.shouldRing) {
@@ -371,4 +375,25 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     executeInTabIfBlocked('block', tab);
   }
 });
+
+chrome.notifications.onClicked.addListener(function (id) {
+  // Clicking the notification brings you back to Chrome, in whatever window
+  // you were last using.
+  chrome.windows.getLastFocused(function (window) {
+    chrome.windows.update(window.id, {focused: true});
+  });
+});
+
+
+chrome.contextMenus.removeAll();
+chrome.contextMenus.create({
+    'title': "timer_end_notification_header",
+    'contexts': ['browser_action'],
+    'onclick': function() {
+        mainPomodoro.start()
+    }});
+
+ 
+
+//};
 
