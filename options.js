@@ -27,6 +27,8 @@ var form = document.getElementById('options-form'),
   showNotificationsEl = document.getElementById('show-notifications'),
   shouldRingEl = document.getElementById('should-ring'),
   clickRestartsEl = document.getElementById('click-restarts'),
+  autostartWorkEl = document.getElementById('autostart-work'),
+  autostartBreakEl = document.getElementById('autostart-break'),
   saveSuccessfulEl = document.getElementById('save-successful'),
   timeFormatErrorEl = document.getElementById('time-format-error'),
   background = chrome.extension.getBackgroundPage(),
@@ -66,6 +68,9 @@ form.onsubmit = function () {
     shouldRing:         shouldRingEl.checked,
     clickRestarts:      clickRestartsEl.checked,
     whitelist:          whitelistSelectEl.selectedIndex == 1
+    autostartWork:      autostartWorkEl.checked,
+    autostartBreak:     autostartBreakEl.checked,
+    //whitelist:          whitelistEl.selectedIndex == 1
   })
   saveSuccessfulEl.className = 'show';
   return false;
@@ -88,6 +93,9 @@ function setListVisibility() {
   }
 }
 
+autostartWorkEl.onchange = formAltered;
+autostartBreakEl.onchange = formAltered;
+
 function formAltered() {
   saveSuccessfulEl.removeAttribute('class');
   timeFormatErrorEl.removeAttribute('class');
@@ -100,6 +108,10 @@ shouldRingEl.checked = background.PREFS.shouldRing;
 clickRestartsEl.checked = background.PREFS.clickRestarts;
 whitelistSelectEl.selectedIndex = background.PREFS.whitelist ? 1 : 0;
 setListVisibility();
+
+//Autostart
+autostartWorkEl.checked = background.PREFS.autostartWork;
+autostartBreakEl.checked = background.PREFS.autostartBreak;
 
 var duration, minutes, seconds;
 for(var key in durationEls) {
