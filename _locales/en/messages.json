@@ -29,6 +29,16 @@
     "message": "Back to work!",
     "description": "Text for the blocked-site overlay, motivating the user to get back to work"
   },
+
+  "block_current_site_context": {
+    "message": "Block current site",
+    "description": "Add current website to the black list"
+  },
+
+  "allow_current_site_context": {
+    "message": "Allow current site",
+    "description": "Add current website to the white list"
+  },  
   
   "options_title": {
     "message": "Strict Workflow Options",

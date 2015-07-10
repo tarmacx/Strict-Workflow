@@ -4,12 +4,13 @@
 
 */
 
-var PREFS = loadPrefs(),
-BADGE_BACKGROUND_COLORS = {
-  work: [192, 0, 0, 255],
-  break: [0, 192, 0, 255]
-}, RING = new Audio("ring.ogg"),
-ringLoaded = false;
+var PREFS = loadPrefs();
+var BADGE_BACKGROUND_COLORS = {
+      work: [192, 0, 0, 255],
+      break: [0, 192, 0, 255]
+    };
+var RING = new Audio("ring.ogg");
+var ringLoaded = false;
 
 loadRingIfNecessary();
 
@@ -298,6 +299,64 @@ function executeInAllBlockedTabs(action) {
   });
 }
 
+
+function blockDomain() {
+	chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+		var url = tabs[0].url;
+		var parsedURL = parseURL(url);
+		PREFS.siteBlacklist.push(parsedURL.parent_domain);
+		savePrefs(PREFS);
+	});
+}
+
+function allowDomain() {
+	chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+		var url = tabs[0].url;
+		var parsedURL = parseURL(url);
+		PREFS.siteWhitelist.push(parsedURL.parent_domain);
+		savePrefs(PREFS);
+	});
+}
+
+function parseURL(url){
+    parsed_url = {}
+
+    if ( url == null || url.length == 0 )
+        return parsed_url;
+
+    protocol_i = url.indexOf('://');
+    parsed_url.protocol = url.substr(0,protocol_i);
+
+    remaining_url = url.substr(protocol_i + 3, url.length);
+    domain_i = remaining_url.indexOf('/');
+    domain_i = domain_i == -1 ? remaining_url.length - 1 : domain_i;
+    parsed_url.domain = remaining_url.substr(0, domain_i);
+    parsed_url.path = domain_i == -1 || domain_i + 1 == remaining_url.length ? null : remaining_url.substr(domain_i + 1, remaining_url.length);
+
+    domain_parts = parsed_url.domain.split('.');
+    switch ( domain_parts.length ){
+        case 2:
+          parsed_url.subdomain = null;
+          parsed_url.host = domain_parts[0];
+          parsed_url.tld = domain_parts[1];
+          break;
+        case 3:
+          parsed_url.subdomain = domain_parts[0];
+          parsed_url.host = domain_parts[1];
+          parsed_url.tld = domain_parts[2];
+          break;
+        case 4:
+          parsed_url.subdomain = domain_parts[0];
+          parsed_url.host = domain_parts[1];
+          parsed_url.tld = domain_parts[2] + '.' + domain_parts[3];
+          break;
+    }
+
+    parsed_url.parent_domain = parsed_url.host + '.' + parsed_url.tld;
+
+    return parsed_url;
+}
+
 var notification, mainPomodoro = new Pomodoro({
   getDurations: function () { return PREFS.durations },
   timer: {
@@ -387,12 +446,17 @@ chrome.notifications.onClicked.addListener(function (id) {
 
 chrome.contextMenus.removeAll();
 chrome.contextMenus.create({
-    'title': "timer_end_notification_header",
+    'title': chrome.i18n.getMessage("block_current_site_context"),
     'contexts': ['browser_action'],
     'onclick': function() {
-        mainPomodoro.start()
+        blockDomain();
     }});
-
+chrome.contextMenus.create({
+    'title': chrome.i18n.getMessage("allow_current_site_context"),
+    'contexts': ['browser_action'],
+    'onclick': function() {
+        allowDomain();
+    }});
  
 
 //};

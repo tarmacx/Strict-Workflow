@@ -67,7 +67,7 @@ form.onsubmit = function () {
     showNotifications:  showNotificationsEl.checked,
     shouldRing:         shouldRingEl.checked,
     clickRestarts:      clickRestartsEl.checked,
-    whitelist:          whitelistSelectEl.selectedIndex == 1
+    whitelist:          whitelistSelectEl.selectedIndex == 1,
     autostartWork:      autostartWorkEl.checked,
     autostartBreak:     autostartBreakEl.checked,
     //whitelist:          whitelistEl.selectedIndex == 1
