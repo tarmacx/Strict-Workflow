@@ -1,0 +1,97 @@
+body {
+    background: url(icons/work_full.png) no-repeat fixed right bottom;
+    font-family: 'Lucida Grande', sans-serif;
+    color: rgb(48, 57, 66);
+    -webkit-user-select: none;
+    padding: 1.5em;
+    margin: 0;
+}
+
+p {
+    width: 31em;
+}
+
+h1 {
+    margin-top: 0;
+    font-size: 2.05em;
+    font-weight: normal;
+}
+
+#site-list-wrapper {
+    margin-bottom: 2em;
+}
+
+#site-list-header {
+    font-weight: bold;
+    margin-bottom: .25em;
+}
+
+#site-list {
+    height: 16em;
+    width: 30em;
+    padding: 5px;
+    font: -webkit-control;
+}
+
+#site-list-wrapper .note {
+    width: 33em;
+}
+
+#save-successful {
+    color: green;
+    display: none;
+    margin-left: 1em;
+}
+
+#time-format-error {
+    color: red;
+    display: none;
+}
+
+#save-successful.show,
+#time-format-error.show {
+    display: inline;
+}
+
+#work-block-info {
+    color: red;
+    display: none;
+    width: 25em;
+}
+
+body.work #work-block-info {
+    display: block;
+}
+
+div {
+    margin-bottom: .7em;
+}
+
+#durations label {
+    font-weight: bold;
+    margin-left: 0;
+}
+
+#durations .minutes {
+    font-size: 85%;
+    margin-right: 1.5em;
+}
+
+.numbers {
+    font-size: 85%;
+    margin-right: 1.5em;
+}
+
+.note {
+    font-size: 75%;
+}
+
+label {
+    margin-left: 0.3em;
+}
+
+label .note {
+    margin-left: 2em;
+    margin-top: 0.3em;
+    margin-bottom: 0;
+}
