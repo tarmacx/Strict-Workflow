@@ -6,7 +6,7 @@ var PREFS = loadPrefs();
 var BADGE_BACKGROUND_COLORS = {
     work: [192, 0, 0, 255],
     break: [0, 192, 0, 255],
-    long_break: [0, 192, 0, 255]
+    longbreak: [0, 192, 0, 255]
 
 };
 var RING = new Audio("ring.ogg");
@@ -98,6 +98,7 @@ function savePrefs(prefs) {
 function setPrefs(prefs) {
     PREFS = savePrefs(prefs);
     loadRingIfNecessary();
+    setTimeslotsAlarms();
     return prefs;
 }
 
@@ -131,10 +132,8 @@ for (var i in iconTypeS) {
 */
 function Pomodoro() {
     this.timeRemaining = 0;
+    this.workCyclesDone = 0;
     this.currentMode = 'work_pending';
-
-
-
 }
 
 Pomodoro.prototype.getDurations = function() {
@@ -151,6 +150,7 @@ Pomodoro.prototype.timeRemainingString = function() {
 }
 
 Pomodoro.prototype.start = function() {
+    
     this.nextMode();
     updateIcon(this.currentMode);
     this.updateBadge();
@@ -162,8 +162,8 @@ Pomodoro.prototype.start = function() {
 
     this.currentModeDuration = this.getDurations()[this.currentMode];
     this.timeRemaining = this.currentModeDuration;
-    //TODO: Start intervals here!
 
+    //Start intervals here!
     tickInterval = setInterval(onTick, 1000);
     this.tick();
 
@@ -174,21 +174,13 @@ Pomodoro.prototype.start = function() {
         executeInAllBlockedTabs('unblock');
     }
 
-
-    //FROM Instanciation !
-
-
-
-
-            //
-            //if (notification) setTimeout(function() {
-//                notification.cancel();
-//            }, '10000');
-            //???????
+    //Fetch option tab
     var tabViews = chrome.extension.getViews({
             type: 'tab'
         }),
         tab;
+    
+    //
     for (var i in tabViews) {
         tab = tabViews[i];
         if (typeof tab.startCallbacks !== 'undefined') {
@@ -200,29 +192,44 @@ Pomodoro.prototype.start = function() {
 
 }
 
-Pomodoro.prototype.nextMode = function() {
+Pomodoro.prototype.getNextMode = function() {
     switch(this.currentMode){
         case 'work':
-            this.currentMode = 'break_pending';
+            if (PREFS.longbreaksEnabled){
+                if (this.workCyclesDone >= PREFS.cyclesBeforeLongBreak){
+                    return 'longbreak_pending';
+                }else{
+                    return 'break_pending';
+                }
+            }else{
+                return 'break_pending';
+            }
             break;
         case 'work_pending':
-            this.currentMode = 'work';
+            return 'work';
             break;
         case 'break':
-            this.currentMode = 'work_pending';
+            return 'work_pending';
             break;
         case 'break_pending':
-            this.currentMode = 'break';
+            return 'break';
             break;
-        case 'longbreak': //Not implemented yet
-            this.currentMode = 'work_pending';
+        case 'longbreak':
+            return 'work_pending';
             break;
-        case 'longbreak_pending': //Not implemented yet
-            this.currentMode = 'longbreak';
+        case 'longbreak_pending':
+            return 'longbreak';
             break;
         default:
             //safety net, should not happen !
-            this.currentMode = 'work';
+            return 'work_pending';
+    }
+}
+
+Pomodoro.prototype.nextMode = function() {
+    this.currentMode = this.getNextMode();
+    if(this.currentMode == 'longbreak_pending'){
+        this.workCyclesDone = 0;
     }
 }
 
@@ -231,9 +238,13 @@ Pomodoro.prototype.stop = function() {
     this.currentModeDuration = 0;
     this.timeRemaining = 0;
     this.currentMode = 'work_pending';
-    clearInterval(tickInterval);
+    //Avoid an error in case of stop without a start first
+    if (tickInterval != undefined){
+        clearInterval(tickInterval);
+    }
     updateIcon(this.currentMode);
     this.updateBadge();
+    executeInAllBlockedTabs('unblock');
 }
 
 Pomodoro.prototype.restart = function() {
@@ -245,17 +256,18 @@ function onTick(){
 }
 
 Pomodoro.prototype.updateBadge = function() {
-    if (this.currentMode == 'work' || this.currentMode == 'break' || this.currentMode == 'longbreak'){
-        chrome.browserAction.setBadgeText({
-            text: this.timeRemainingString()
-        });
-    }else{
-        //Remove the icon badge for pending situations
-        chrome.browserAction.setBadgeText({
-           text: ''
-        });
-    }
-
+    switch(this.currentMode){
+        case 'work':
+        case 'break':
+        case 'longbreak':
+            chrome.browserAction.setBadgeText({
+                text: this.timeRemainingString()
+            });
+            break;
+        default:
+            chrome.browserAction.setBadgeText({
+               text: ''
+            });    }
 }
 
 
@@ -268,8 +280,6 @@ Pomodoro.prototype.tick = function() {
 }
 
 
-
-
 Pomodoro.prototype.onEnd = function() {
 
     this.currentModeDuration = 0;
@@ -277,22 +287,29 @@ Pomodoro.prototype.onEnd = function() {
     clearInterval(tickInterval);
 
 
-    //Set next mode
+    if (this.currentMode == 'work'){
+        this.workCyclesDone++;
+    }
+    
+    //Set next mode (will be pending)
+    var prevMode = this.currentMode;
     this.nextMode();
+    var nextMode = this.getNextMode();
+    
     //Set next icon in pending mode
     updateIcon(this.currentMode);
     this.updateBadge();
 
     //Diplays end of timer notification
     if (PREFS.showNotifications) {
-        var nextModeName = chrome.i18n.getMessage(this.currentMode);
+        var nextModeName = chrome.i18n.getMessage(nextMode);
         chrome.notifications.create("", {
             type: "basic",
             title: chrome.i18n.getMessage("timer_end_notification_header"),
             message: chrome.i18n.getMessage("timer_end_notification_body",
                 nextModeName),
             priority: 2,
-            iconUrl: ICONS.FULL[nextModeName]
+            iconUrl: ICONS.FULL[nextMode]
         }, function() {});
     }
 
@@ -301,7 +318,7 @@ Pomodoro.prototype.onEnd = function() {
         RING.play();
     }
 
-    if (this.currentMode == 'break_pending' && PREFS.autostartBreak) {
+    if ((this.currentMode == 'break_pending' || this.currentMode == 'longbreak_pending') && PREFS.autostartBreak) {
         this.start();
     }
 
@@ -310,6 +327,111 @@ Pomodoro.prototype.onEnd = function() {
     }
 }
 
+
+function setTimeslotsAlarms(){
+    chrome.alarms.clearAll(function(){
+        var now = new Date(Date.now());
+
+        for(i in PREFS.timeslots){
+            var startHours = PREFS.timeslots[i].startTime.split(":")[0];
+            var startMinutes = PREFS.timeslots[i].startTime.split(":")[1];
+            var stopHours = PREFS.timeslots[i].stopTime.split(":")[0];
+            var stopMinutes = PREFS.timeslots[i].stopTime.split(":")[1];
+
+            var timeToStart = new Date(Date.now());
+            timeToStart.setHours(startHours);
+            timeToStart.setMinutes(startMinutes);
+            timeToStart.setSeconds(0);
+            timeToStart.setMilliseconds(0);
+
+            var timeToStop = new Date(Date.now());
+            timeToStop.setHours(stopHours);
+            timeToStop.setMinutes(stopMinutes);
+            timeToStop.setSeconds(0);
+            timeToStop.setMilliseconds(0);
+
+            //Shif 1 day if it's a past item
+            if(timeToStart <= now){
+                timeToStart.setDate(timeToStart.getDate() + 1);
+            }
+            if (timeToStop <= now){
+                timeToStop.setDate(timeToStop.getDate() + 1)
+            }
+
+            chrome.alarms.create(i+";"+"start", {when: timeToStart.getTime(), periodInMinutes: 1440});
+            chrome.alarms.create(i+";"+"stop", {when: timeToStop.getTime(), periodInMinutes: 1440});
+        } 
+
+        //Debug
+        console.log("Alarms defined:");
+        chrome.alarms.getAll(function(alarms){
+            for(i=0;i<alarms.length;i++){
+            console.log("Scheduled Time  "+alarms[i].scheduledTime);
+            console.log("Alarm Name "+alarms[i].name);
+        }});       
+    });
+}
+
+function alarmEvent(alarm){
+    console.log("Alarm Event!");
+    timeslotIndex = alarm.name.split(";")[0];
+    timeslotAction = alarm.name.split(";")[1];
+    
+    var now = new Date(Date.now());
+    var dd = now.getDay();
+
+    var alarmEnabled;
+    //Check if stop time is next day
+    if (Date.parse(now.toDateString + " " + PREFS.timeslots[timeslotIndex].startTime) < Date.parse(now.toDateString + " " + PREFS.timeslots[timeslotIndex].stopTime)){
+        alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[dd];
+    }else{//check if previous day is enabled
+        if (dd > 0) {
+            alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[dd-1];
+        }else{
+            alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[6]; //Check saturday instead
+        }
+    }
+        
+    //Start of break timeslot
+    if (timeslotAction == "start" && PREFS.operationMode == "modeTimeExclusion" && alarmEnabled){
+        mainPomodoro.stop();
+    }
+    //End of break timeslot
+    if (timeslotAction == "stop" && PREFS.operationMode == "modeTimeExclusion" && alarmEnabled){
+        mainPomodoro.currentMode = "work_pending"
+        mainPomodoro.start();
+    }
+    //Start of work timeslot
+    if (timeslotAction == "start" && PREFS.operationMode == "modeTimeInclusion" && alarmEnabled){
+        mainPomodoro.currentMode = "work_pending"
+        mainPomodoro.start();
+    }
+    //End of work timeslot
+    if (timeslotAction == "stop" && PREFS.operationMode == "modeTimeInclusion" && alarmEnabled){
+        mainPomodoro.stop();
+    }
+    
+    //Ring to note end of cycle
+    if (PREFS.shouldRing) {
+        console.log("playing ring", RING);
+        RING.play();
+    }
+    
+    
+    //Diplays end of timer notification
+    if (PREFS.showNotifications) {
+        var nextModeName = chrome.i18n.getMessage(mainPomodoro.getNextMode());
+        chrome.notifications.create("", {
+            type: "basic",
+            title: chrome.i18n.getMessage("timer_end_notification_header"),
+            message: chrome.i18n.getMessage("timer_end_notification_body",
+                nextModeName),
+            priority: 2,
+            iconUrl: ICONS.FULL[nextMode]
+        }, function() {});
+    }
+
+}
 /*
 
   Views
@@ -503,7 +625,7 @@ function updateIcon(mode){
     });
 
     //Updates badge background
-    if (mode == 'work' || mode == 'break' || mode == 'long_break'){
+    if (mode == 'work' || mode == 'break' || mode == 'longbreak'){
         chrome.browserAction.setBadgeBackgroundColor({
             color: BADGE_BACKGROUND_COLORS[mode]
         });
@@ -547,6 +669,7 @@ chrome.notifications.onClicked.addListener(function(id) {
     });
 });
 
+
 //Clear up context menu before adding any
 chrome.contextMenus.removeAll();
 
@@ -573,6 +696,51 @@ chrome.contextMenus.create({
     'title': chrome.i18n.getMessage("stop_current_timer"),
     'contexts': ['browser_action'],
     'onclick': function() {
-        this.running = false;
+        mainPomodoro.stop();
     }
 });
+
+setTimeslotsAlarms();
+chrome.alarms.onAlarm.addListener(function (alarm){
+    alarmEvent(alarm);
+});
+
+function checkStartingMode(){
+    now = new Date(Date.now());
+    var curTimeslot;
+    var timeslotDate = new Date();
+
+    for(i in PREFS.timeslots){
+        curTimeslot = PREF.timeslots[i];
+        timeslotDate = Date.now();
+
+        var timeToStart = getTimeslotDate(curTimeslot.startTime);
+        var timeToStop = getTimeslotDate(curTimeslot.stopTime);
+
+        //Skip to next day if stop is earlier
+        if (timeToStop < timeToStart){
+            timeToStop.setDate(time.getDate() + 1);
+        }
+
+        //Check if in timeslot
+        if (now > timeToStart && now < timeToStop){
+
+        }
+
+    };       
+}
+
+function getTimeslotDate(timeAsStrig){
+    var now = new Date(Date.now());
+    var timeslotDate = new Date(Date.now());
+ 
+    var startHours = timeAsStrig.split(":")[0];
+    var startMinutes = timeAsStrig.split(":")[1];
+    
+    timeslotDate.setHours(startHours);
+    timeslotDate.setMinutes(startMinutes);
+    timeslotDate.setSeconds(0);
+    timeslotDate.setMilliseconds(0);
+
+    return timeslotDate;    
+}

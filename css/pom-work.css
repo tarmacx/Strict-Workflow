@@ -1,5 +1,5 @@
 body {
-    background: url(icons/work_full.png) no-repeat fixed right bottom;
+    background: url(../icons/work_full.png) no-repeat fixed right bottom;
     font-family: 'Lucida Grande', sans-serif;
     color: rgb(48, 57, 66);
     -webkit-user-select: none;
@@ -68,6 +68,11 @@ div {
 }
 
 #durations label {
+    font-weight: bold;
+    margin-left: 0;
+}
+
+.timeTable label {
     font-weight: bold;
     margin-left: 0;
 }

@@ -1,11 +1,23 @@
 {
     "ext_name": {
-        "message": "Strict Workflow",
+        "message": "Pomodoro Workflow",
         "description": "Name of the extension"
     },
     "ext_description": {
         "message": "Enforces a 25min/5min workflow: 25 minutes of distraction-free work, followed by 5 minutes of break. Repeat as necessary.",
         "description": "Description of the extension"
+    },
+    "work": {
+        "message": "work",
+        "description": "The name of the work timer"
+    },
+    "break": {
+        "message": "break",
+        "description": "The name of the break timer"
+    },
+    "longbreak": {
+        "message": "long break",
+        "description": "The name of the break timer"
     },
 
     "work_pending": {
@@ -16,6 +28,10 @@
         "message": "break",
         "description": "The name of the break timer"
     },
+    "longbreak_pending": {
+        "message": "long break",
+        "description": "The name of the break timer"
+    },
     "minutes": {
         "message": "minutes",
         "description": "The name of the time interval representing 60 seconds"
@@ -24,6 +40,11 @@
     "options_work_duration": {
         "message": "Work phase duration",
         "description": "How long should the work phase duration be"
+    },
+    
+    "options_longbreak_enable": {
+        "message": "Enable long breaks",
+        "description": "Checkbox label to enable long breaks"
     },
 
     "options_break_duration": {
@@ -40,8 +61,6 @@
         "message": "Number of workcycles between long breaks",
         "description": "How many work phases should be done before having a long break"
     },
-
-
 
     "site_blocked_info": {
         "message": "Page blocked until a break timer starts.",
@@ -137,13 +156,62 @@
         "message": "Save successful",
         "description": "On the options page, message to indicate that the options have been saved"
     },
+
+
+    "options_operation_mode": {
+        "message": "during those timeframes:",
+        "description": "Select the operating mode of the inclusions/exclusions"
+    },
+    "options_time_exclusion": {
+        "message": "On break",
+        "description": "The time frames are for the break periods"
+    },
+    "options_time_inclusion": {
+        "message": "Working",
+        "description": "The time frames are for the working periods"
+    },
+    
+    
     "options_add_time": {
         "message": "Add",
         "description": "Button to add time frame for enable/disable"
     },
-
-
-
+    "options_start_time": {
+        "message": "Start",
+        "description": "Header for the start time of the exclusion time"
+    },
+    "options_end_time": {
+        "message": "End",
+        "description": "Header for the end time of the exclusion time"
+    },
+    "options_sunday": {
+        "message": "Sun",
+        "description": "Days of the week"
+    },
+    "options_monday": {
+        "message": "Mon",
+        "description": "Days of the week"
+    },
+    "options_tuesday": {
+        "message": "Tue",
+        "description": "Days of the week"
+    },
+    "options_wednesday": {
+        "message": "Wed",
+        "description": "Days of the week"
+    },
+    "options_thursday": {
+        "message": "Thu",
+        "description": "Days of the week"
+    },
+    "options_friday": {
+        "message": "Fri",
+        "description": "Days of the week"
+    },
+    "options_saturday": {
+        "message": "Sat",
+        "description": "Days of the week"
+    },
 
     "timer_end_notification_header": {
         "message": "Time's up!",

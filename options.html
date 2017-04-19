@@ -2,10 +2,15 @@
 <html lang="en">
 
 <head>
+
     <title data-i18n="options_title"></title>
 
-    <link rel="stylesheet" href="chrome://resources/css/widgets.css">
-    <link rel="stylesheet" href="style.css">
+    <!-- <link rel="stylesheet" href="chrome://resources/css/widgets.css"> -->
+    <link rel="stylesheet" href="css/pom-work.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+    
+
 
 </head>
 
@@ -45,6 +50,12 @@
             </p>
 
             <p>
+                <input id="longbreak-enable" type="checkbox"/>
+                <label for="longbreak-enable" data-i18n="options_longbreak_enable" data-i18n-caps>
+            </p>
+            
+            <span class="longbreak_section">
+            <p>
                 <label for="longbreak-duration">
                     <span data-i18n="options_longbreak_duration" data-i18n-caps></span>:
                 </label>
@@ -55,16 +66,42 @@
             <p>
                 <div>
                     <label for="workcycles" data-i18n="options_workcycles" data-i18n-caps></label>
-                    <input class="numbers" id="workcycles" type="text" size="2" />
+                    <input id="workcycles" type="text" size="2" />
                 </div>
             </p>
+            </span>
 
             <span id="time-format-error" data-i18n="options_time_format_error"></span>
         </div>
+        
+        
+        <div class="timeTable">
+            <p>
+                <select id="operation_mode">
+                    <option value="modeTimeExclusion" data-i18n="options_time_exclusion"></option>
+                    <option value="modeTimeInclusion" data-i18n="options_time_inclusion"></option>
+                </select>
+                <label for="operation_mode" data-i18n="options_operation_mode"></label>
+            </p>
+            <table id="timeTable">
+                <tr>
+                    <th data-i18n="options_start_time"></th>
+                    <th data-i18n="options_end_time"></th>
+                    <th data-i18n="options_sunday"></th>
+                    <th data-i18n="options_monday"></th>
+                    <th data-i18n="options_tuesday"></th>
+                    <th data-i18n="options_wednesday"></th>
+                    <th data-i18n="options_thursday"></th>
+                    <th data-i18n="options_friday"></th>
+                    <th data-i18n="options_saturday"></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </table>
+        </div>
 
-        <table id="timeTable">Table ici</table>
-
-        <div><button type="button" id="add-time" data-i18n="options_add_time"></button></div>
+        <div><button type="button" id="butAddTime" data-i18n="options_add_time"></button></div>
 
         <div>
             <input id="show-notifications" type="checkbox" />
