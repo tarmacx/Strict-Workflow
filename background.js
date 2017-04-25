@@ -9,10 +9,27 @@ var BADGE_BACKGROUND_COLORS = {
     longbreak: [0, 192, 0, 255]
 
 };
+
 var RING = new Audio("ring.ogg");
 var ringLoaded = false;
-
 loadRingIfNecessary();
+
+var ICONS = {
+        ACTION: {},
+        FULL: {},
+    },
+    iconTypeS = ['default', 'work', 'work_pending', 'break', 'break_pending', 'longbreak', 'longbreak_pending'],
+    iconType;
+
+//Load icons
+for (var i in iconTypeS) {
+    iconType = iconTypeS[i];
+    ICONS.ACTION[iconType] = "icons/" + iconType + ".png";
+    ICONS.FULL[iconType] = "icons/" + iconType + "_full.png";
+}
+
+//Main pomodoro declaration and execution
+var mainPomodoro = new Pomodoro();
 
 function defaultPrefs() {
     return {
@@ -105,26 +122,12 @@ function setPrefs(prefs) {
 //Load ring audio only if required
 function loadRingIfNecessary() {
     if (PREFS.shouldRing && !ringLoaded) {
-        RING.onload = function() {
+        RING.onload = function () {
             console.log('ring loaded');
             ringLoaded = true;
         }
         RING.load();
     }
-}
-
-var ICONS = {
-        ACTION: {},
-        FULL: {},
-    },
-    iconTypeS = ['default', 'work', 'work_pending', 'break', 'break_pending', 'longbreak', 'longbreak_pending'],
-    iconType;
-
-//Load icons
-for (var i in iconTypeS) {
-    iconType = iconTypeS[i];
-    ICONS.ACTION[iconType] = "icons/" + iconType + ".png";
-    ICONS.FULL[iconType] = "icons/" + iconType + "_full.png";
 }
 
 /*
@@ -133,15 +136,16 @@ for (var i in iconTypeS) {
 function Pomodoro() {
     this.timeRemaining = 0;
     this.workCyclesDone = 0;
-    this.currentMode = 'work_pending';
+    tickInterval = 0;
+    //this.currentMode = 'work_pending';
 }
 
-Pomodoro.prototype.getDurations = function() {
+Pomodoro.prototype.getDurations = function () {
     return PREFS.durations;
 }
 
 //Return the string of the remaining time (m or s)
-Pomodoro.prototype.timeRemainingString = function() {
+Pomodoro.prototype.timeRemainingString = function () {
     if (this.timeRemaining >= 60) {
         return Math.round(this.timeRemaining / 60) + "m";
     } else {
@@ -149,8 +153,8 @@ Pomodoro.prototype.timeRemainingString = function() {
     }
 }
 
-Pomodoro.prototype.start = function() {
-    
+Pomodoro.prototype.start = function () {
+    console.log("Start Pomodoro");
     this.nextMode();
     updateIcon(this.currentMode);
     this.updateBadge();
@@ -179,7 +183,7 @@ Pomodoro.prototype.start = function() {
             type: 'tab'
         }),
         tab;
-    
+
     //
     for (var i in tabViews) {
         tab = tabViews[i];
@@ -192,16 +196,16 @@ Pomodoro.prototype.start = function() {
 
 }
 
-Pomodoro.prototype.getNextMode = function() {
-    switch(this.currentMode){
+Pomodoro.prototype.getNextMode = function () {
+    switch (this.currentMode) {
         case 'work':
-            if (PREFS.longbreaksEnabled){
-                if (this.workCyclesDone >= PREFS.cyclesBeforeLongBreak){
+            if (PREFS.longbreaksEnabled) {
+                if (this.workCyclesDone >= PREFS.cyclesBeforeLongBreak) {
                     return 'longbreak_pending';
-                }else{
+                } else {
                     return 'break_pending';
                 }
-            }else{
+            } else {
                 return 'break_pending';
             }
             break;
@@ -226,37 +230,35 @@ Pomodoro.prototype.getNextMode = function() {
     }
 }
 
-Pomodoro.prototype.nextMode = function() {
+Pomodoro.prototype.nextMode = function () {
     this.currentMode = this.getNextMode();
-    if(this.currentMode == 'longbreak_pending'){
+    if (this.currentMode == 'longbreak_pending') {
         this.workCyclesDone = 0;
     }
 }
 
 //Special stop function
-Pomodoro.prototype.stop = function() {
+Pomodoro.prototype.stop = function () {
+    console.log("Stop Pomodoro");
     this.currentModeDuration = 0;
     this.timeRemaining = 0;
     this.currentMode = 'work_pending';
     //Avoid an error in case of stop without a start first
-    if (tickInterval != undefined){
+    if (tickInterval != 0) {
         clearInterval(tickInterval);
+        tickInterval = 0;
     }
     updateIcon(this.currentMode);
     this.updateBadge();
     executeInAllBlockedTabs('unblock');
 }
 
-Pomodoro.prototype.restart = function() {
+Pomodoro.prototype.restart = function () {
     this.timeRemaining = this.currentModeDuration;
 }
 
-function onTick(){
-    mainPomodoro.tick();
-}
-
-Pomodoro.prototype.updateBadge = function() {
-    switch(this.currentMode){
+Pomodoro.prototype.updateBadge = function () {
+    switch (this.currentMode) {
         case 'work':
         case 'break':
         case 'longbreak':
@@ -266,12 +268,12 @@ Pomodoro.prototype.updateBadge = function() {
             break;
         default:
             chrome.browserAction.setBadgeText({
-               text: ''
-            });    }
+                text: ''
+            });
+    }
 }
 
-
-Pomodoro.prototype.tick = function() {
+Pomodoro.prototype.tick = function () {
     this.timeRemaining--;
     this.updateBadge();
     if (this.timeRemaining <= 0) {
@@ -279,23 +281,23 @@ Pomodoro.prototype.tick = function() {
     }
 }
 
-
-Pomodoro.prototype.onEnd = function() {
+Pomodoro.prototype.onEnd = function () {
 
     this.currentModeDuration = 0;
     this.timeRemaining = 0;
     clearInterval(tickInterval);
+    tickInterval = 0;
 
 
-    if (this.currentMode == 'work'){
+    if (this.currentMode == 'work') {
         this.workCyclesDone++;
     }
-    
+
     //Set next mode (will be pending)
     var prevMode = this.currentMode;
     this.nextMode();
     var nextMode = this.getNextMode();
-    
+
     //Set next icon in pending mode
     updateIcon(this.currentMode);
     this.updateBadge();
@@ -309,8 +311,8 @@ Pomodoro.prototype.onEnd = function() {
             message: chrome.i18n.getMessage("timer_end_notification_body",
                 nextModeName),
             priority: 2,
-            iconUrl: ICONS.FULL[nextMode]
-        }, function() {});
+            iconUrl: ICONS.FULL[this.getNextMode()]
+        }, function () {});
     }
 
     if (PREFS.shouldRing) {
@@ -327,116 +329,7 @@ Pomodoro.prototype.onEnd = function() {
     }
 }
 
-
-function setTimeslotsAlarms(){
-    chrome.alarms.clearAll(function(){
-        var now = new Date(Date.now());
-
-        for(i in PREFS.timeslots){
-            var startHours = PREFS.timeslots[i].startTime.split(":")[0];
-            var startMinutes = PREFS.timeslots[i].startTime.split(":")[1];
-            var stopHours = PREFS.timeslots[i].stopTime.split(":")[0];
-            var stopMinutes = PREFS.timeslots[i].stopTime.split(":")[1];
-
-            var timeToStart = new Date(Date.now());
-            timeToStart.setHours(startHours);
-            timeToStart.setMinutes(startMinutes);
-            timeToStart.setSeconds(0);
-            timeToStart.setMilliseconds(0);
-
-            var timeToStop = new Date(Date.now());
-            timeToStop.setHours(stopHours);
-            timeToStop.setMinutes(stopMinutes);
-            timeToStop.setSeconds(0);
-            timeToStop.setMilliseconds(0);
-
-            //Shif 1 day if it's a past item
-            if(timeToStart <= now){
-                timeToStart.setDate(timeToStart.getDate() + 1);
-            }
-            if (timeToStop <= now){
-                timeToStop.setDate(timeToStop.getDate() + 1)
-            }
-
-            chrome.alarms.create(i+";"+"start", {when: timeToStart.getTime(), periodInMinutes: 1440});
-            chrome.alarms.create(i+";"+"stop", {when: timeToStop.getTime(), periodInMinutes: 1440});
-        } 
-
-        //Debug
-        console.log("Alarms defined:");
-        chrome.alarms.getAll(function(alarms){
-            for(i=0;i<alarms.length;i++){
-            console.log("Scheduled Time  "+alarms[i].scheduledTime);
-            console.log("Alarm Name "+alarms[i].name);
-        }});       
-    });
-}
-
-function alarmEvent(alarm){
-    console.log("Alarm Event!");
-    timeslotIndex = alarm.name.split(";")[0];
-    timeslotAction = alarm.name.split(";")[1];
-    
-    var now = new Date(Date.now());
-    var dd = now.getDay();
-
-    var alarmEnabled;
-    //Check if stop time is next day
-    if (Date.parse(now.toDateString + " " + PREFS.timeslots[timeslotIndex].startTime) < Date.parse(now.toDateString + " " + PREFS.timeslots[timeslotIndex].stopTime)){
-        alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[dd];
-    }else{//check if previous day is enabled
-        if (dd > 0) {
-            alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[dd-1];
-        }else{
-            alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[6]; //Check saturday instead
-        }
-    }
-        
-    //Start of break timeslot
-    if (timeslotAction == "start" && PREFS.operationMode == "modeTimeExclusion" && alarmEnabled){
-        mainPomodoro.stop();
-    }
-    //End of break timeslot
-    if (timeslotAction == "stop" && PREFS.operationMode == "modeTimeExclusion" && alarmEnabled){
-        mainPomodoro.currentMode = "work_pending"
-        mainPomodoro.start();
-    }
-    //Start of work timeslot
-    if (timeslotAction == "start" && PREFS.operationMode == "modeTimeInclusion" && alarmEnabled){
-        mainPomodoro.currentMode = "work_pending"
-        mainPomodoro.start();
-    }
-    //End of work timeslot
-    if (timeslotAction == "stop" && PREFS.operationMode == "modeTimeInclusion" && alarmEnabled){
-        mainPomodoro.stop();
-    }
-    
-    //Ring to note end of cycle
-    if (PREFS.shouldRing) {
-        console.log("playing ring", RING);
-        RING.play();
-    }
-    
-    
-    //Diplays end of timer notification
-    if (PREFS.showNotifications) {
-        var nextModeName = chrome.i18n.getMessage(mainPomodoro.getNextMode());
-        chrome.notifications.create("", {
-            type: "basic",
-            title: chrome.i18n.getMessage("timer_end_notification_header"),
-            message: chrome.i18n.getMessage("timer_end_notification_body",
-                nextModeName),
-            priority: 2,
-            iconUrl: ICONS.FULL[nextMode]
-        }, function() {});
-    }
-
-}
-/*
-
-  Views
-
-*/
+// Views
 
 // The code gets really cluttered down here. Refactor would be in order,
 // but I'm busier with other projects >_<
@@ -539,7 +432,7 @@ function executeInTabIfBlocked(action, tab) {
 function executeInAllBlockedTabs(action) {
     var windows = chrome.windows.getAll({
         populate: true
-    }, function(windows) {
+    }, function (windows) {
         var tabs, tab, domain, listedDomain;
         for (var i in windows) {
             tabs = windows[i].tabs;
@@ -555,7 +448,7 @@ function blockDomain() {
     chrome.tabs.query({
         'active': true,
         'lastFocusedWindow': true
-    }, function(tabs) {
+    }, function (tabs) {
         var url = tabs[0].url;
         var parsedURL = parseURL(url);
         PREFS.siteBlacklist.push(parsedURL.parent_domain);
@@ -568,7 +461,7 @@ function allowDomain() {
     chrome.tabs.query({
         'active': true,
         'lastFocusedWindow': true
-    }, function(tabs) {
+    }, function (tabs) {
         var url = tabs[0].url;
         var parsedURL = parseURL(url);
         PREFS.siteWhitelist.push(parsedURL.parent_domain);
@@ -617,15 +510,14 @@ function parseURL(url) {
     return parsed_url;
 }
 
-
-function updateIcon(mode){
+function updateIcon(mode) {
     //Updates Icon
     chrome.browserAction.setIcon({
-       path: ICONS.ACTION[mode]
+        path: ICONS.ACTION[mode]
     });
 
     //Updates badge background
-    if (mode == 'work' || mode == 'break' || mode == 'longbreak'){
+    if (mode == 'work' || mode == 'break' || mode == 'longbreak') {
         chrome.browserAction.setBadgeBackgroundColor({
             color: BADGE_BACKGROUND_COLORS[mode]
         });
@@ -633,16 +525,181 @@ function updateIcon(mode){
 
 }
 
-//Main pomodoro declaration and execution
-var mainPomodoro = new Pomodoro();
+function onTick() {
+    mainPomodoro.tick();
+}
+
+function setTimeslotsAlarms() {
+    chrome.alarms.clearAll(function () {
+        var now = new Date(Date.now());
+
+        for (i in PREFS.timeslots) {
+            timeToStart = getTimeslotDate(PREFS.timeslots[i].startTime);
+            timeToStop = getTimeslotDate(PREFS.timeslots[i].stopTime);
+
+            //Shift 1 day if it's a past item
+            if (timeToStart <= now) {
+                timeToStart.setDate(timeToStart.getDate() + 1);
+            }
+            if (timeToStop <= now) {
+                timeToStop.setDate(timeToStop.getDate() + 1);
+            }
+
+            chrome.alarms.create(i + ";" + "start", {
+                when: timeToStart.getTime(),
+                periodInMinutes: 1440
+            });
+            chrome.alarms.create(i + ";" + "stop", {
+                when: timeToStop.getTime(),
+                periodInMinutes: 1440
+            });
+        }
+
+        //Debug
+        console.log("Alarms defined:");
+        chrome.alarms.getAll(function (alarms) {
+            for (i = 0; i < alarms.length; i++) {
+                console.log("Scheduled Time  " + alarms[i].scheduledTime);
+                console.log("Alarm Name " + alarms[i].name);
+            }
+        });
+    });
+}
+
+function alarmEvent(alarm) {
+    timeslotIndex = alarm.name.split(";")[0];
+    timeslotAction = alarm.name.split(";")[1];
+
+    console.log(Date.now().toDateString() + " - Alarm Event : " + timeslotIndex + " -> " + timeslotAction);
+
+    var now = new Date(Date.now());
+    var dd = now.getDay();
+
+    timeToStart = getTimeslotDate(PREFS.timeslots[timeslotIndex].startTime);
+    timeToStop = getTimeslotDate(PREFS.timeslots[timeslotIndex].stopTime);
+
+    var alarmEnabled;
+    //Check if stop time is next day we need to check if previous day was enabled
+    if (timeToStop <= timeToStart && now.getHours >= 0){
+        if (dd > 0) {
+            alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[dd - 1];
+        } else {
+            alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[6]; //Check saturday instead
+        }
+    }else{
+        alarmEnabled = PREFS.timeslots[timeslotIndex].daysEnabled[dd];
+    }
+
+    //Start of break timeslot
+    if (timeslotAction == "start" && PREFS.operationMode == "modeTimeExclusion" && alarmEnabled) {
+        mainPomodoro.stop();
+    }
+    //End of break timeslot
+    if (timeslotAction == "stop" && PREFS.operationMode == "modeTimeExclusion" && alarmEnabled) {
+        mainPomodoro.currentMode = "work_pending";
+        mainPomodoro.start();
+    }
+    //Start of work timeslot
+    if (timeslotAction == "start" && PREFS.operationMode == "modeTimeInclusion" && alarmEnabled) {
+        mainPomodoro.currentMode = "work_pending";
+        mainPomodoro.start();
+    }
+    //End of work timeslot
+    if (timeslotAction == "stop" && PREFS.operationMode == "modeTimeInclusion" && alarmEnabled) {
+        mainPomodoro.stop();
+    }
+
+    //Ring to note end of cycle
+    if (PREFS.shouldRing) {
+        console.log("playing ring", RING);
+        RING.play();
+    }
+
+    //Diplays end of timer notification
+    if (PREFS.showNotifications) {
+        var nextModeName = chrome.i18n.getMessage(mainPomodoro.getNextMode());
+        chrome.notifications.create("", {
+            type: "basic",
+            title: chrome.i18n.getMessage("timer_end_notification_header"),
+            message: chrome.i18n.getMessage("timer_end_notification_body",
+                nextModeName),
+            priority: 2,
+            iconUrl: ICONS.FULL[mainPomodoro.getNextMode()]
+        }, function () {});
+    }
+
+}
+
+function checkStartingMode() {
+    now = new Date(Date.now());
+    var curTimeslot;
+    var timeslotDate = new Date();
+    var dd = now.getDay();
+
+    var foundTimeslot = false;
+
+    for (i in PREFS.timeslots) {
+        curTimeslot = PREFS.timeslots[i];
+        timeslotDate = Date.now();
+
+        var timeToStart = getTimeslotDate(curTimeslot.startTime);
+        var timeToStop = getTimeslotDate(curTimeslot.stopTime);
+
+        //Skip to next day if stop is earlier
+        if (timeToStop < timeToStart) {
+            timeToStop.setDate(time.getDate() + 1);
+        }
+
+        //Check if stop time is next day we need to check if previous day was enabled
+        if (timeToStop <= timeToStart && now.getHours >= 0){
+            if (dd > 0) {
+                timeslotEnabled = curTimeslot.daysEnabled[dd - 1];
+            } else {
+                timeslotEnabled = curTimeslot.daysEnabled[6]; //Check saturday instead
+            }
+        }else{
+            timeslotEnabled = curTimeslot.daysEnabled[dd];
+        }
+
+        //Check if in timeslot
+        if (now > timeToStart && now < timeToStop && timeslotEnabled) {
+            foundTimeslot = true;
+
+            //Start of work timeslot
+            if (PREFS.operationMode == "modeTimeInclusion" && timeslotEnabled) {
+                mainPomodoro.currentMode = "work_pending";
+                mainPomodoro.start();
+            }
+        }
+    }
+
+    if(!foundTimeslot && PREFS.operationMode == "modeTimeExclusion"){
+        mainPomodoro.start();
+    }
+}
+
+function getTimeslotDate(timeAsString) {
+    var now = new Date(Date.now());
+    var timeslotDate = new Date(Date.now());
+
+    var startHours = timeAsString.split(":")[0];
+    var startMinutes = timeAsString.split(":")[1];
+
+    timeslotDate.setHours(startHours);
+    timeslotDate.setMinutes(startMinutes);
+    timeslotDate.setSeconds(0);
+    timeslotDate.setMilliseconds(0);
+
+    return timeslotDate;
+}
 
 //Event listener for the icon clicking
-chrome.browserAction.onClicked.addListener(function(tab) {
+chrome.browserAction.onClicked.addListener(function (tab) {
     if (mainPomodoro.timeRemaining > 0) {
         if (PREFS.clickRestarts && mainPomodoro.currentMode == 'work') {
             mainPomodoro.restart();
         }
-        if (PREFS.clickSkipBreak && (mainPomodoro.currentMode == 'break' || mainPomodoro.currentMode == 'longbreak')){
+        if (PREFS.clickSkipBreak && (mainPomodoro.currentMode == 'break' || mainPomodoro.currentMode == 'longbreak')) {
             mainPomodoro.stop();
             mainPomodoro.start();
         }
@@ -652,23 +709,22 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 });
 
 //Check if blocked when a tab gets updated
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     if (mainPomodoro.currentMode == 'work' || mainPomodoro.currentMode == 'break_pending' || mainPomodoro.currentMode == 'longbreak_pending') {
         executeInTabIfBlocked('block', tab);
     }
 });
 
 //Add event listener to Chrome
-chrome.notifications.onClicked.addListener(function(id) {
+chrome.notifications.onClicked.addListener(function (id) {
     // Clicking the notification brings you back to Chrome, in whatever window
     // you were last using.
-    chrome.windows.getLastFocused(function(window) {
+    chrome.windows.getLastFocused(function (window) {
         chrome.windows.update(window.id, {
             focused: true
         });
     });
 });
-
 
 //Clear up context menu before adding any
 chrome.contextMenus.removeAll();
@@ -677,7 +733,7 @@ chrome.contextMenus.removeAll();
 chrome.contextMenus.create({
     'title': chrome.i18n.getMessage("block_current_site_context"),
     'contexts': ['browser_action'],
-    'onclick': function() {
+    'onclick': function () {
         blockDomain();
     }
 });
@@ -686,7 +742,7 @@ chrome.contextMenus.create({
 chrome.contextMenus.create({
     'title': chrome.i18n.getMessage("allow_current_site_context"),
     'contexts': ['browser_action'],
-    'onclick': function() {
+    'onclick': function () {
         allowDomain();
     }
 });
@@ -695,52 +751,14 @@ chrome.contextMenus.create({
 chrome.contextMenus.create({
     'title': chrome.i18n.getMessage("stop_current_timer"),
     'contexts': ['browser_action'],
-    'onclick': function() {
+    'onclick': function () {
         mainPomodoro.stop();
     }
 });
 
-setTimeslotsAlarms();
-chrome.alarms.onAlarm.addListener(function (alarm){
+chrome.alarms.onAlarm.addListener(function (alarm) {
     alarmEvent(alarm);
 });
 
-function checkStartingMode(){
-    now = new Date(Date.now());
-    var curTimeslot;
-    var timeslotDate = new Date();
-
-    for(i in PREFS.timeslots){
-        curTimeslot = PREF.timeslots[i];
-        timeslotDate = Date.now();
-
-        var timeToStart = getTimeslotDate(curTimeslot.startTime);
-        var timeToStop = getTimeslotDate(curTimeslot.stopTime);
-
-        //Skip to next day if stop is earlier
-        if (timeToStop < timeToStart){
-            timeToStop.setDate(time.getDate() + 1);
-        }
-
-        //Check if in timeslot
-        if (now > timeToStart && now < timeToStop){
-
-        }
-
-    };       
-}
-
-function getTimeslotDate(timeAsStrig){
-    var now = new Date(Date.now());
-    var timeslotDate = new Date(Date.now());
- 
-    var startHours = timeAsStrig.split(":")[0];
-    var startMinutes = timeAsStrig.split(":")[1];
-    
-    timeslotDate.setHours(startHours);
-    timeslotDate.setMinutes(startMinutes);
-    timeslotDate.setSeconds(0);
-    timeslotDate.setMilliseconds(0);
-
-    return timeslotDate;    
-}
+setTimeslotsAlarms();
+checkStartingMode();
