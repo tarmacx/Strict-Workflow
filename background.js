@@ -61,6 +61,7 @@ function defaultPrefs() {
         clickSkipBreak: false,
         autostartWork: false,
         autostartBreak: true,
+        allowStop: false,
         whitelist: false
     }
 }
@@ -118,6 +119,7 @@ function setPrefs(prefs) {
     PREFS = savePrefs(prefs);
     loadRingIfNecessary();
     setTimeslotsAlarms();
+    createContextMenu();
     return prefs;
 }
 
@@ -753,6 +755,8 @@ chrome.notifications.onClicked.addListener(function (id) {
     });
 });
 
+
+function createContextMenu(){
 //Clear up context menu before adding any
 chrome.contextMenus.removeAll();
 
@@ -774,7 +778,8 @@ chrome.contextMenus.create({
     }
 });
 
-//Add context menu to stop the timer
+    //Add context menu to stop the timer if option is checked
+    if (PREFS.allowStop){
 chrome.contextMenus.create({
     'title': chrome.i18n.getMessage("stop_current_timer"),
     'contexts': ['browser_action'],
@@ -782,11 +787,16 @@ chrome.contextMenus.create({
         mainPomodoro.stop();
     }
 });
+    }
+
+}
+
 
 //Chrome alarms for the timeslots
 chrome.alarms.onAlarm.addListener(function (alarm) {
     alarmEvent(alarm);
 });
 
+createContextMenu();
 setTimeslotsAlarms();
 checkStartingMode();

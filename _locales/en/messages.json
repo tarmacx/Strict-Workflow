@@ -132,6 +132,10 @@
         "message": "Clicking on a running work timer restarts it",
         "description": "On the options page, label for the checkbox that enables/disables the feature that clicking on a running timer restarts it"
     },
+    "options_allow_stop_pomodoro": {
+        "message": "Enable context menu on the Pomodoro to stop the timer",
+        "description": "Enable on the right click on the pomodoro to stop the timer"
+    },
     "options_click_skip_break": {
         "message": "Clicking on a running break timer skips it",
         "description": "On the options page, label for the checkbox that enables/disables the feature that clicking on a running break timer skips it"

@@ -27,6 +27,7 @@ var form = document.getElementById('options-form'),
     showNotificationsEl = document.getElementById('show-notifications'),
     shouldRingEl = document.getElementById('should-ring'),
     clickRestartsEl = document.getElementById('click-restarts'),
+    allowStopEl = document.getElementById('allow_stop_pomodoro'),
     clickSkipBreakEl = document.getElementById('click-skip-break'),
     autostartWorkEl = document.getElementById('autostart-work'),
     autostartBreakEl = document.getElementById('autostart-break'),
@@ -91,10 +92,11 @@ form.onsubmit = function () {
         whitelist: whitelistSelectEl.selectedIndex == 1,
         autostartWork: autostartWorkEl.checked,
         autostartBreak: autostartBreakEl.checked,
+        allowStop: allowStopEl.checked,
         timeslots: timeslots,
     })
 
-
+    createContextMenu();
 
     saveSuccessfulEl.className = 'show';
     return false;
@@ -108,7 +110,9 @@ clickRestartsEl.onchange = formAltered;
 clickSkipBreakEl.onchange = formAltered;
 autostartWorkEl.onchange = formAltered;
 autostartBreakEl.onchange = formAltered;
+allowStopEl.onchange = formAltered;
 volumeSliderEl.onchange = formAltered;
+
 
 whitelistSelectEl.onchange = function () {
     setListVisibility();
@@ -124,6 +128,7 @@ clickRestartsEl.checked = background.PREFS.clickRestarts;
 clickSkipBreakEl.checked = background.PREFS.clickSkipBreak;
 autostartWorkEl.checked = background.PREFS.autostartWork;
 autostartBreakEl.checked = background.PREFS.autostartBreak;
+allowStopEl.checked = background.PREFS.allowStop;
 operationModeEl.value = background.PREFS.operationMode;
 longbreaksEnableEl.checked = background.PREFS.longbreaksEnabled;
 workcyclesEl.value = background.PREFS.cyclesBeforeLongBreak;
