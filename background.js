@@ -52,7 +52,8 @@ function defaultPrefs() {
         siteWhitelist: [],
         durations: { // in seconds
             work: 25 * 60,
-            break: 5 * 60
+            break: 5 * 60,
+            longbreak: 20 * 60,
         },
         shouldRing: true,
         clickRestarts: false,
@@ -291,6 +292,8 @@ Pomodoro.prototype.onEnd = function () {
 
     if (this.currentMode == 'work') {
         this.workCyclesDone++;
+        this.workCyclesDoneToday++;
+        this.workCyclesDoneTotal++;
     }
 
     //Set next mode (will be pending)
@@ -317,6 +320,7 @@ Pomodoro.prototype.onEnd = function () {
 
     if (PREFS.shouldRing) {
         console.log("playing ring", RING);
+        RING.volume = PREFS.ringVolume;
         RING.play();
     }
 
@@ -708,11 +712,27 @@ chrome.browserAction.onClicked.addListener(function (tab) {
     }
 });
 
-//Check if blocked when a tab gets updated
-chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+//Block current updated or activated tab (THOU SHALL NOT PASS !!)
+function checkTab(tab){
     if (mainPomodoro.currentMode == 'work' || mainPomodoro.currentMode == 'break_pending' || mainPomodoro.currentMode == 'longbreak_pending') {
         executeInTabIfBlocked('block', tab);
+    }else{
+        executeInTabIfBlocked('unblock', tab);
     }
+    }
+
+//Check if blocked when a tab gets updated
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+    console.log("Tab updated");
+    checkTab(tab);
+});
+
+//Check if blocked when a tab gets updated
+chrome.tabs.onActivated.addListener(function (activeInfo) {
+    console.log("Tab activated");
+    chrome.tabs.get(activeInfo.tabId, function(tab){
+        checkTab(tab);
+    });
 });
 
 //Add event listener to Chrome
@@ -756,6 +776,7 @@ chrome.contextMenus.create({
     }
 });
 
+//Chrome alarms for the timeslots
 chrome.alarms.onAlarm.addListener(function (alarm) {
     alarmEvent(alarm);
 });
