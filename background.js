@@ -364,7 +364,6 @@ function pathsMatch(test, against) {
       /path/to ~> /path/to: pass
       /path/to/ ~> /path/to/location: fail
     */
-
     return !against || test.substr(0, against.length) == against;
 }
 
@@ -418,10 +417,12 @@ function isLocationBlocked(location) {
     return PREFS.whitelist;
 }
 
+//Execute block.js or unblock.js according to action value
 function executeInTabIfBlocked(action, tab) {
-    var file = "content_scripts/" + action + ".js",
-        location;
-    location = tab.url.split('://');
+    var file = "content_scripts/" + action + ".js";
+    var location;
+    if (tab.url != ""){//make sur URL is existing
+        location = tab.url.split('://'); //remove http, https, ftp...
     location = parseLocation(location[1]);
 
     //Check tab to see if it needs to be blocked
@@ -431,6 +432,8 @@ function executeInTabIfBlocked(action, tab) {
         });
     }
 }
+}
+
 
 //This function list all windows and execute executeInTabIfBlocked for each tabs of each windows found
 function executeInAllBlockedTabs(action) {
@@ -457,6 +460,7 @@ function blockDomain() {
         var parsedURL = parseURL(url);
         PREFS.siteBlacklist.push(parsedURL.parent_domain);
         savePrefs(PREFS);
+        checkTab(tabs[0]);
     });
 }
 
@@ -470,6 +474,7 @@ function allowDomain() {
         var parsedURL = parseURL(url);
         PREFS.siteWhitelist.push(parsedURL.parent_domain);
         savePrefs(PREFS);
+        checkTab(tabs[0]);
     });
 }
 
@@ -574,7 +579,7 @@ function alarmEvent(alarm) {
     timeslotIndex = alarm.name.split(";")[0];
     timeslotAction = alarm.name.split(";")[1];
 
-    console.log(Date.now().toDateString() + " - Alarm Event : " + timeslotIndex + " -> " + timeslotAction);
+    console.log("Alarm Event : " + timeslotIndex + " -> " + timeslotAction);
 
     var now = new Date(Date.now());
     var dd = now.getDay();
