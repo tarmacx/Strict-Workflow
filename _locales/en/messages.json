@@ -170,6 +170,10 @@
         "message": "Working",
         "description": "The time frames are for the working periods"
     },
+    "options_ringVolume": {
+        "message": "Volume",
+        "description": "Label for the ring volume"
+    },
     
     
     "options_add_time": {

@@ -37,6 +37,8 @@ var form = document.getElementById('options-form'),
     operationModeEl = document.getElementById('operation_mode'),
     butAddTimeEl = document.getElementById("butAddTime"),
     timeTableEl = document.getElementById("timeTable"),
+    volumeSliderEl = document.getElementById("options_ringVolume");
+    volumeValueEl = document.getElementById("volumeValue");
     background = chrome.extension.getBackgroundPage(),
     startCallbacks = {},
     durationEls = {};
@@ -83,6 +85,7 @@ form.onsubmit = function () {
         cyclesBeforeLongBreak: workcycles.value,
         showNotifications: showNotificationsEl.checked,
         shouldRing: shouldRingEl.checked,
+        ringVolume: volumeSliderEl.value,
         clickRestarts: clickRestartsEl.checked,
         clickSkipBreak: clickSkipBreakEl.checked,
         whitelist: whitelistSelectEl.selectedIndex == 1,
@@ -105,6 +108,7 @@ clickRestartsEl.onchange = formAltered;
 clickSkipBreakEl.onchange = formAltered;
 autostartWorkEl.onchange = formAltered;
 autostartBreakEl.onchange = formAltered;
+volumeSliderEl.onchange = formAltered;
 
 whitelistSelectEl.onchange = function () {
     setListVisibility();
@@ -123,6 +127,7 @@ autostartBreakEl.checked = background.PREFS.autostartBreak;
 operationModeEl.value = background.PREFS.operationMode;
 longbreaksEnableEl.checked = background.PREFS.longbreaksEnabled;
 workcyclesEl.value = background.PREFS.cyclesBeforeLongBreak;
+volumeSliderEl.value = background.PREFS.ringVolume;
 whitelistSelectEl.selectedIndex = background.PREFS.whitelist ? 1 : 0;
 setListVisibility();
 
@@ -322,4 +327,12 @@ function TimeSlot (){
     this.startTime = '00:00';
     this.stopTime = '00:00';
     this.daysEnabled = {};
+}
+
+
+
+volumeValue.innerHTML = volumeSliderEl.value * 100;
+
+volumeSliderEl.oninput = function() {
+    volumeValue.innerHTML = this.value * 100;
 }

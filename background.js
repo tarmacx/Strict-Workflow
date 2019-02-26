@@ -56,6 +56,7 @@ function defaultPrefs() {
             longbreak: 20 * 60,
         },
         shouldRing: true,
+        ringVolume: 1.0,
         clickRestarts: false,
         clickSkipBreak: false,
         autostartWork: false,
@@ -621,6 +622,7 @@ function alarmEvent(alarm) {
     //Ring to note end of cycle
     if (PREFS.shouldRing) {
         console.log("playing ring", RING);
+        RING.volume = PREFS.ringVolume;
         RING.play();
     }
 
