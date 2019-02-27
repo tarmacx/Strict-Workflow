@@ -22,6 +22,9 @@
 
           img.src = chrome.extension.getURL('icons/work_full.png');
           img.style.marginBottom = '1em';
+          img.style.width = 'auto';
+          img.style.height = 'auto';
+          img.style.display = 'inline';
           overlay.appendChild(img);
 
           for (var i in lines) {
