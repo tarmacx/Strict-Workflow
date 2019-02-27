@@ -304,10 +304,6 @@ Pomodoro.prototype.onEnd = function () {
     this.nextMode();
     var nextMode = this.getNextMode();
 
-    //Set next icon in pending mode
-    updateIcon(this.currentMode);
-    this.updateBadge();
-
     //Diplays end of timer notification
     if (PREFS.showNotifications) {
         var nextModeName = chrome.i18n.getMessage(nextMode);
@@ -329,12 +325,15 @@ Pomodoro.prototype.onEnd = function () {
 
     if ((this.currentMode == 'break_pending' || this.currentMode == 'longbreak_pending') && PREFS.autostartBreak) {
         this.start();
+    }else if (this.currentMode == 'work_pending' && PREFS.autostartWork) {
+        this.start();
+    } else {
+        //Set next icon in pending mode
+        updateIcon(this.currentMode);
+        this.updateBadge();
     }
 
-    if (this.currentMode == 'work_pending' && PREFS.autostartWork) {
-        this.start();
     }
-}
 
 // Views
 
